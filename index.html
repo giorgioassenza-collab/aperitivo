@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quando si fa l'aperitivo?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column — header, name bar, the best day, a 6-week Mon–Sun grid, then who has voted */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --fg:#17202a; --muted:#5d6b78; --line:#dde3e9;
+  --spritz:#f0561d; --spritz-soft:#fde3d8; --olive:#2f8f5b; --olive-soft:#dcf1e4;
+  --heat:240,86,29;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171c; --surface:#1b2228; --fg:#eef2f5; --muted:#98a6b3; --line:#2b353e;
+  --spritz:#ff7a45; --spritz-soft:#3d2219; --olive:#5cc78b; --olive-soft:#1b3427; --heat:255,122,69; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171c; --surface:#1b2228; --fg:#eef2f5; --muted:#98a6b3; --line:#2b353e;
+  --spritz:#ff7a45; --spritz-soft:#3d2219; --olive:#5cc78b; --olive-soft:#1b3427; --heat:255,122,69; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,7vw,44px);line-height:1.02;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h1 span{color:var(--spritz)}
+.lede{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.who{display:flex;gap:8px;flex-wrap:wrap}
+.who input,.who select{flex:1 1 200px;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid transparent;padding:10px 16px}
+.primary{background:var(--spritz);color:#fff}
+.ghost{background:transparent;border-color:var(--line);color:var(--fg)}
+button:focus-visible,input:focus-visible,.day:focus-visible{outline:2px solid var(--spritz);outline-offset:2px}
+.me{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.me strong{font-family:var(--display);font-size:20px}
+.hint{color:var(--muted);font-size:13px;margin:6px 0 0}
+.best{display:flex;flex-direction:column;gap:6px}
+.best.match{background:var(--olive-soft);border-color:transparent}
+.best h2{font-family:var(--display);font-size:24px;font-weight:800;margin:0;line-height:1.15;text-wrap:balance}
+.best p{margin:0;color:var(--muted)}
+.best .alt{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:3px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line)}
+.chip.on{background:var(--spritz-soft);border-color:transparent}
+.weekhead,.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.weekhead div{font-size:12px;font-weight:600;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.06em}
+.day .m{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--spritz);line-height:1}
+.day.all .m{color:#fff}
+.grid{margin-top:6px}
+.day{position:relative;aspect-ratio:1/0.85;max-width:100%;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;font-variant-numeric:tabular-nums;user-select:none}
+.day .n{font-family:var(--display);font-size:18px;font-weight:500;line-height:1}
+.day .c{font-size:11px;color:var(--muted);line-height:1}
+.day.past{opacity:.35;pointer-events:none}
+.day.mine{border:2px solid var(--spritz)}
+.day.mine::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--spritz)}
+.day.all{background:var(--olive)!important;border-color:var(--olive);color:#fff}
+.day.all .c{color:#fff}
+button.day{cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:6px}
+.people{display:flex;flex-wrap:wrap;gap:8px}
+.status{font-size:13px;color:var(--muted);min-height:1.2em}
+.detail{font-size:14px}
+.detail b{font-weight:600}
+@media (prefers-reduced-motion:no-preference){.day{transition:background .15s,border-color .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Quando si fa <span>l'aperitivo?</span></h1>
+    <p class="lede">Scrivi il tuo nome e tocca i giorni in cui ci sei. Quando c'è un giorno libero per tutti, diventa verde.</p>
+  </header>
+
+  <section class="panel" id="namePanel">
+    <p class="label">Il tuo nome</p>
+    <form class="who" id="nameForm">
+      <select id="nameSelect" required>
+        <option value="" disabled selected>Scegli il tuo nome</option>
+        <option>Andre</option><option>Gio</option><option>Luca</option><option>Matte</option><option>Matti</option><option>Vale M</option><option>Vale V</option><option>Vero</option>
+        <option value="__altro">Altro…</option>
+      </select>
+      <input id="nameInput" placeholder="Scrivi il tuo nome" maxlength="40" hidden>
+      <button class="primary" type="submit">Entra</button>
+    </form>
+    <p class="hint">Se hai già segnato i giorni, scegli di nuovo il tuo nome per modificarli.</p>
+  </section>
+
+  <section class="panel me" id="mePanel" hidden>
+    <div><p class="label" style="margin:0">Stai segnando come</p><strong id="meName"></strong></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="ghost" id="clearBtn" type="button">Svuota i miei giorni</button>
+      <button class="ghost" id="logoutBtn" type="button">Cambia nome</button>
+    </div>
+  </section>
+
+  <section class="panel best" id="best"></section>
+
+  <section>
+    <div class="weekhead"><div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div></div>
+    <div class="grid" id="grid"></div>
+    <p class="status" id="status"></p>
+    <div class="legend">
+      <span><i style="background:var(--olive)"></i>Liberi tutti</span>
+      <span><i style="background:rgba(var(--heat),.45)"></i>Più è scuro, più gente c'è</span>
+      <span><i style="border:2px solid var(--spritz)"></i>I tuoi giorni</span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <p class="label">Hanno risposto</p>
+    <div class="people" id="people"><span class="hint" style="margin:0">Ancora nessuno. Inizia tu.</span></div>
+    <p class="detail" id="detail" hidden></p>
+  </section>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ====== INCOLLA QUI I DATI DI FIREBASE (Impostazioni progetto > Le tue app > Config) ======
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDMBTatFscCtpdZhsRMZG5bWzwd8aWl-3s",
+  authDomain: "aperitivo-a693f.firebaseapp.com",
+  projectId: "aperitivo-a693f",
+  storageBucket: "aperitivo-a693f.firebasestorage.app",
+  messagingSenderId: "378890285304",
+  appId: "1:378890285304:web:46657997a5db9448388b0d"
+};
+// ===========================================================================================
+(function(){
+  const WEEKS = 3;
+  const OFF = new Set(["2026-10-26","2026-10-30"]);
+  const LAST = "2026-11-08";
+  const MONTHS = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  const WD = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+  const $ = id => document.getElementById(id);
+
+  let db = null, people = {}, me = null, myDays = new Set(), saveTimer = null, readOnly = false;
+
+  const iso = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const fromIso = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+  const nice = s => { const d=fromIso(s); return WD[d.getDay()]+" "+d.getDate()+" "+MONTHS[d.getMonth()]; };
+  const slug = n => n.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60) || "anonimo";
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(today); start.setDate(start.getDate() - ((start.getDay()+6)%7));
+  const days = []; for(let i=0;i<WEEKS*7;i++){ const d=new Date(start); d.setDate(start.getDate()+i); if(d.getDay()!==0 && d.getDay()!==6) days.push(d); }
+  const allowed = k => !OFF.has(k) && k <= LAST && fromIso(k) >= today;
+
+  function store(k,v){ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){} }
+  function load(k){ try{ return localStorage.getItem(k);}catch(e){ return null; } }
+
+  function counts(){
+    const map = {}; const list = Object.values(people).filter(p => (p.days||[]).some(allowed));
+    list.forEach(p => (p.days||[]).filter(allowed).forEach(d => { (map[d] ||= []).push(p.name); }));
+    return {map, total:list.length};
+  }
+
+  function render(){
+    // merge my unsaved local state
+    if(me){ people[me.id] = {name:me.name, days:[...myDays]}; }
+    const {map,total} = counts();
+    const grid = $("grid"); grid.innerHTML = "";
+    days.forEach((d,i) => {
+      const key = iso(d), names = map[key]||[], n = names.length, past = !allowed(key);
+      const el = document.createElement(me && !past && !readOnly ? "button" : "div");
+      el.className = "day";
+      if(el.tagName==="BUTTON"){ el.type="button"; el.setAttribute("aria-pressed", myDays.has(key)); }
+      if(past) el.classList.add("past");
+      if(me && myDays.has(key)) el.classList.add("mine");
+      if(total>1 && n===total) el.classList.add("all");
+      else if(n && total) el.style.background = "rgba(var(--heat),"+(0.12+0.5*n/total).toFixed(2)+")";
+      const mlabel = (i===0 || d.getDate()===1) ? '<span class="m">'+MONTHS[d.getMonth()].slice(0,3)+'</span>' : '';
+      el.innerHTML = mlabel+'<span class="n">'+d.getDate()+'</span><span class="c">'+(n? n+"/"+total : "")+'</span>';
+      el.title = nice(key) + (n ? " — " + names.join(", ") : "");
+      el.setAttribute("aria-label", el.title);
+      if(el.tagName==="BUTTON") el.addEventListener("click", () => toggle(key));
+      grid.appendChild(el);
+    });
+    // fix month headers inside weeks: simple approach places header at week starts when month changes
+    renderBest(map,total);
+    renderPeople(map,total);
+  }
+
+  function renderBest(map,total){
+    const b = $("best"); b.classList.remove("match");
+    const future = Object.keys(map).filter(k => fromIso(k) >= today).sort();
+    if(!total){ b.innerHTML = '<p class="label" style="margin:0">Giorno migliore</p><h2>Nessuno ha ancora segnato i giorni</h2><p>Appena qualcuno risponde, qui compare il giorno con più persone libere.</p>'; return; }
+    const full = future.filter(k => map[k].length===total);
+    if(total>1 && full.length){
+      b.classList.add("match");
+      b.innerHTML = '<p class="label" style="margin:0">C\'è un giorno per tutti</p><h2>'+cap(nice(full[0]))+'</h2><p>Liberi tutti e '+total+'.</p>' +
+        (full.length>1 ? '<div class="alt">'+full.slice(1,6).map(k=>'<span class="chip">'+cap(nice(k))+'</span>').join("")+'</div>' : "");
+      return;
+    }
+    if(!future.length){ b.innerHTML = '<p class="label" style="margin:0">Giorno migliore</p><h2>Nessun giorno futuro segnato</h2>'; return; }
+    const top = Math.max(...future.map(k=>map[k].length));
+    const bests = future.filter(k=>map[k].length===top);
+    const missing = Object.values(people).filter(p => (p.days||[]).some(allowed)).map(p=>p.name).filter(n=>!map[bests[0]].includes(n));
+    b.innerHTML = '<p class="label" style="margin:0">'+(total===1?'Per ora ha risposto solo una persona':'Ancora nessun giorno per tutti')+'</p><h2>'+cap(nice(bests[0]))+'</h2><p>'+top+' su '+total+' liberi'+(missing.length? '. Manca: '+esc(missing.join(", ")) : '')+'.</p>' +
+      (bests.length>1 ? '<div class="alt">'+bests.slice(1,6).map(k=>'<span class="chip">'+cap(nice(k))+'</span>').join("")+'</div>' : "");
+  }
+
+  function renderPeople(map,total){
+    const box = $("people"); const list = Object.entries(people).filter(([,p])=>p.days && p.days.length || (me && people[me.id]===p));
+    if(!list.length){ box.innerHTML = '<span class="hint" style="margin:0">Ancora nessuno. Inizia tu.</span>'; return; }
+    box.innerHTML = list.sort((a,b)=>a[1].name.localeCompare(b[1].name)).map(([id,p]) =>
+      '<span class="chip'+(me&&id===me.id?' on':'')+'">'+esc(p.name)+' · '+(p.days||[]).filter(allowed).length+' giorni</span>').join("");
+  }
+
+  const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  function toggle(key){
+    myDays.has(key) ? myDays.delete(key) : myDays.add(key);
+    render(); queueSave();
+  }
+
+  function queueSave(){
+    if(!db){ $("status").textContent = "Salvataggio non disponibile in questa anteprima."; return; }
+    $("status").textContent = "Salvo…";
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 700);
+  }
+  let saving = false, again = false;
+  async function save(){
+    if(saving){ again = true; return; }
+    saving = true;
+    try{
+      await db.doc("people/"+me.id).set({name:me.name, days:[...myDays].sort(), updatedAt:new Date().toISOString()});
+      $("status").textContent = "Salvato.";
+    }catch(e){
+      $("status").textContent = "Non sono riuscito a salvare. Riprova tra un attimo.";
+    }finally{ saving = false; if(again){ again=false; save(); } }
+  }
+
+  function enter(name){
+    name = name.trim().replace(/\s+/g," ");
+    if(!name) return;
+    const id = slug(name);
+    const existing = people[id];
+    me = {id, name: existing ? existing.name : name};
+    myDays = new Set(existing ? existing.days||[] : []);
+    store("aperitivo-name", me.name);
+    $("namePanel").hidden = true; $("mePanel").hidden = false; $("meName").textContent = me.name;
+    $("status").textContent = "Tocca i giorni in cui sei libero.";
+    render();
+  }
+
+  $("nameSelect").addEventListener("change", () => { const altro = $("nameSelect").value==="__altro"; $("nameInput").hidden = !altro; $("nameInput").required = altro; if(altro) $("nameInput").focus(); });
+  $("nameForm").addEventListener("submit", e => { e.preventDefault(); const v = $("nameSelect").value; enter(v==="__altro" ? $("nameInput").value : v); });
+  $("logoutBtn").addEventListener("click", () => { me=null; myDays=new Set(); store("aperitivo-name",null); $("namePanel").hidden=false; $("mePanel").hidden=true; $("nameInput").value=""; $("nameInput").hidden=true; $("nameSelect").selectedIndex=0; $("status").textContent=""; render(); });
+  $("clearBtn").addEventListener("click", () => { if(!me) return; myDays.clear(); render(); queueSave(); });
+
+  render();
+  const remembered = load("aperitivo-name");
+
+  (async () => {
+    try{
+      if(FIREBASE_CONFIG.apiKey.startsWith("INCOLLA")) throw new Error("config");
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+    }catch(e){ db = null; }
+    if(!db){ $("status").textContent = "Configurazione mancante: incolla i dati di Firebase nel file."; return; }
+    let first = true;
+    db.collection("people").onSnapshot(snap => {
+      const next = {};
+      snap.docs.forEach(d => { const v = d.data(); if(v && v.name) next[d.id] = {name:v.name, days:Array.isArray(v.days)?v.days:[]}; });
+      // keep my in-progress edits while a save is pending
+      if(me && (saveTimer && $("status").textContent==="Salvo…")) next[me.id] = {name:me.name, days:[...myDays]};
+      people = next;
+      if(first){ first=false; if(remembered && !me) enter(remembered); }
+      else if(me && people[me.id] && !saving && $("status").textContent!=="Salvo…") myDays = new Set(people[me.id].days);
+      render();
+    }, () => { $("status").textContent = "Collegamento perso. Ricarica la pagina."; });
+  })();
+})();
+</script>
+
+</body>
+</html>
