@@ -107,7 +107,7 @@ button.day{cursor:pointer}
     <p class="status" id="status"></p>
     <div class="legend">
       <span><i style="background:var(--olive)"></i>Liberi tutti</span>
-      <span><i style="background:rgba(var(--heat),.45)"></i>Più è scuro, più gente c'è</span>
+      <span>Il numero indica quanti sono liberi quel giorno</span>
       <span><i style="border:2px solid var(--spritz)"></i>I tuoi giorni</span>
     </div>
   </section>
@@ -134,6 +134,7 @@ const FIREBASE_CONFIG = {
 // ===========================================================================================
 (function(){
   const WEEKS = 3;
+  const TEAM = ["Andre","Gio","Luca","Matte","Matti","Vale M","Vale V","Vero"];
   const OFF = new Set(["2026-10-26","2026-10-30"]);
   const LAST = "2026-11-08";
   const MONTHS = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
@@ -158,13 +159,15 @@ const FIREBASE_CONFIG = {
   function counts(){
     const map = {}; const list = Object.values(people).filter(p => (p.days||[]).some(allowed));
     list.forEach(p => (p.days||[]).filter(allowed).forEach(d => { (map[d] ||= []).push(p.name); }));
-    return {map, total:list.length};
+    const everyone = new Set(TEAM);
+    list.forEach(p => everyone.add(p.name));
+    return {map, total:everyone.size, everyone:[...everyone]};
   }
 
   function render(){
     // merge my unsaved local state
     if(me){ people[me.id] = {name:me.name, days:[...myDays]}; }
-    const {map,total} = counts();
+    const {map,total,everyone} = counts();
     const grid = $("grid"); grid.innerHTML = "";
     days.forEach((d,i) => {
       const key = iso(d), names = map[key]||[], n = names.length, past = !allowed(key);
@@ -173,26 +176,25 @@ const FIREBASE_CONFIG = {
       if(el.tagName==="BUTTON"){ el.type="button"; el.setAttribute("aria-pressed", myDays.has(key)); }
       if(past) el.classList.add("past");
       if(me && myDays.has(key)) el.classList.add("mine");
-      if(total>1 && n===total) el.classList.add("all");
-      else if(n && total) el.style.background = "rgba(var(--heat),"+(0.12+0.5*n/total).toFixed(2)+")";
+      if(n && n>=total) el.classList.add("all");
       const mlabel = (i===0 || d.getDate()===1) ? '<span class="m">'+MONTHS[d.getMonth()].slice(0,3)+'</span>' : '';
-      el.innerHTML = mlabel+'<span class="n">'+d.getDate()+'</span><span class="c">'+(n? n+"/"+total : "")+'</span>';
+      el.innerHTML = mlabel+'<span class="n">'+d.getDate()+'</span><span class="c">'+(past ? "" : n+"/"+total)+'</span>';
       el.title = nice(key) + (n ? " — " + names.join(", ") : "");
       el.setAttribute("aria-label", el.title);
       if(el.tagName==="BUTTON") el.addEventListener("click", () => toggle(key));
       grid.appendChild(el);
     });
     // fix month headers inside weeks: simple approach places header at week starts when month changes
-    renderBest(map,total);
+    renderBest(map,total,everyone);
     renderPeople(map,total);
   }
 
-  function renderBest(map,total){
+  function renderBest(map,total,everyone){
     const b = $("best"); b.classList.remove("match");
     const future = Object.keys(map).filter(k => fromIso(k) >= today).sort();
-    if(!total){ b.innerHTML = '<p class="label" style="margin:0">Giorno migliore</p><h2>Nessuno ha ancora segnato i giorni</h2><p>Appena qualcuno risponde, qui compare il giorno con più persone libere.</p>'; return; }
-    const full = future.filter(k => map[k].length===total);
-    if(total>1 && full.length){
+    if(!Object.keys(map).length){ b.innerHTML = '<p class="label" style="margin:0">Giorno migliore</p><h2>Nessuno ha ancora segnato i giorni</h2><p>Appena qualcuno risponde, qui compare il giorno con più persone libere.</p>'; return; }
+    const full = future.filter(k => map[k].length>=total);
+    if(full.length){
       b.classList.add("match");
       b.innerHTML = '<p class="label" style="margin:0">C\'è un giorno per tutti</p><h2>'+cap(nice(full[0]))+'</h2><p>Liberi tutti e '+total+'.</p>' +
         (full.length>1 ? '<div class="alt">'+full.slice(1,6).map(k=>'<span class="chip">'+cap(nice(k))+'</span>').join("")+'</div>' : "");
@@ -201,8 +203,8 @@ const FIREBASE_CONFIG = {
     if(!future.length){ b.innerHTML = '<p class="label" style="margin:0">Giorno migliore</p><h2>Nessun giorno futuro segnato</h2>'; return; }
     const top = Math.max(...future.map(k=>map[k].length));
     const bests = future.filter(k=>map[k].length===top);
-    const missing = Object.values(people).filter(p => (p.days||[]).some(allowed)).map(p=>p.name).filter(n=>!map[bests[0]].includes(n));
-    b.innerHTML = '<p class="label" style="margin:0">'+(total===1?'Per ora ha risposto solo una persona':'Ancora nessun giorno per tutti')+'</p><h2>'+cap(nice(bests[0]))+'</h2><p>'+top+' su '+total+' liberi'+(missing.length? '. Manca: '+esc(missing.join(", ")) : '')+'.</p>' +
+    const missing = everyone.filter(n=>!map[bests[0]].includes(n));
+    b.innerHTML = '<p class="label" style="margin:0">'+'Ancora nessun giorno per tutti'+'</p><h2>'+cap(nice(bests[0]))+'</h2><p>'+top+' su '+total+' liberi'+(missing.length? '. Manca: '+esc(missing.join(", ")) : '')+'.</p>' +
       (bests.length>1 ? '<div class="alt">'+bests.slice(1,6).map(k=>'<span class="chip">'+cap(nice(k))+'</span>').join("")+'</div>' : "");
   }
 
