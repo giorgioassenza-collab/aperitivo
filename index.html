@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600&display=swap">
 <style>
-/* Layout: one narrow column — header, name bar, your answer, the tally, then who said what */
+/* Layout: one narrow column — header, name, rank the four vouchers, then progress and the anonymous ranking */
 :root{
   --bg:#f3f5f7; --surface:#ffffff; --fg:#17202a; --muted:#5d6b78; --line:#dde3e9;
   --spritz:#f0561d; --spritz-soft:#fde3d8; --olive:#2f8f5b; --olive-soft:#dcf1e4;
@@ -26,47 +26,53 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-
 .wrap{max-width:640px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
 h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,7vw,44px);line-height:1.02;letter-spacing:-.02em;margin:0;text-wrap:balance}
 h1 span{color:var(--spritz)}
+h2{font-family:var(--display);font-size:22px;font-weight:800;margin:0;line-height:1.2;text-wrap:balance}
 .lede{color:var(--muted);margin:6px 0 0;max-width:60ch}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
-.label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0}
 .who{display:flex;gap:8px;flex-wrap:wrap}
-.who input,.who select{flex:1 1 200px;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.who select{flex:1 1 200px;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
 button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid transparent;padding:10px 16px}
+button:disabled{opacity:.45;cursor:not-allowed}
 .primary{background:var(--spritz);color:#fff}
 .ghost{background:transparent;border-color:var(--line);color:var(--fg)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outline-offset:2px}
-.hint{color:var(--muted);font-size:13px;margin:6px 0 0}
-.me{display:flex;flex-direction:column;gap:14px}
+button:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outline-offset:2px}
+.hint{color:var(--muted);font-size:13px;margin:0}
 .me-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.me strong{font-family:var(--display);font-size:20px}
-.question{font-family:var(--display);font-size:22px;font-weight:800;margin:0;line-height:1.2}
-.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.choice{padding:16px 12px;font-size:16px;background:var(--bg);border:2px solid var(--line);color:var(--fg)}
-.choice[aria-pressed="true"].yes{background:var(--olive);border-color:var(--olive);color:#fff}
-.choice[aria-pressed="true"].no{background:var(--fg);border-color:var(--fg);color:var(--bg)}
-.tally{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.stat{display:flex;flex-direction:column;gap:2px}
-.stat b{font-family:var(--display);font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.stat span{font-size:13px;color:var(--muted)}
-.stat.yes b{color:var(--olive)}
-.groups{display:flex;flex-direction:column;gap:14px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.group p{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--muted)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font-size:14px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg)}
-.chip.yes{background:var(--olive-soft);border-color:transparent}
-.chip.wait{border-style:dashed;color:var(--muted)}
-.chip.me{font-weight:600}
-.empty{font-size:14px;color:var(--muted)}
+.me-top strong{font-family:var(--display);font-size:20px}
+.options{display:flex;flex-direction:column;gap:8px}
+.opt{display:grid;grid-template-columns:40px 1fr;align-items:center;gap:12px;text-align:left;padding:12px;background:var(--bg);border:2px solid var(--line);color:var(--fg)}
+.opt .pos{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:18px;border:2px dashed var(--line);color:var(--muted)}
+.opt.ranked{border-color:var(--spritz)}
+.opt.ranked .pos{background:var(--spritz);border:none;color:#fff}
+.opt .t{font-weight:600;font-size:16px;display:block}
+.opt .s{font-size:13px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .primary{flex:1 1 200px}
 .status{font-size:13px;color:var(--muted);min-height:1.2em;margin:0}
-@media (max-width:420px){.stat b{font-size:28px}}
-@media (prefers-reduced-motion:no-preference){.choice{transition:background .15s,border-color .15s,color .15s}}
+.done{background:var(--olive-soft);border-color:transparent}
+.progress{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--olive);border-radius:999px}
+@media (prefers-reduced-motion:no-preference){.progress i{transition:width .3s}.opt{transition:border-color .15s}}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:14px;padding:4px 12px;border-radius:999px;border:1px dashed var(--line);color:var(--muted)}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.rank li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center}
+.rank .n{font-family:var(--display);font-weight:800;font-size:18px;color:var(--muted)}
+.rank .name{font-weight:600;display:block}
+.rank .bar{height:6px;border-radius:999px;background:var(--line);margin-top:4px;overflow:hidden}
+.rank .bar i{display:block;height:100%;background:var(--spritz)}
+.rank .pts{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px}
+.rank li.win .n{color:var(--olive)}
+.rank li.win .bar i{background:var(--olive)}
+.winner{border-color:transparent;background:var(--olive-soft)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>Regalo per <span>Ale</span></h1>
-    <p class="lede">Scegli il tuo nome e di' se partecipi al regalo.</p>
+    <p class="lede">Metti in ordine i buoni Ticketone dal tuo preferito al meno preferito. Si vota una volta sola e il voto è anonimo: la classifica mostra solo i punti.</p>
   </header>
 
   <section class="panel" id="namePanel">
@@ -74,38 +80,47 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <form class="who" id="nameForm">
       <select id="nameSelect" required>
         <option value="" disabled selected>Scegli il tuo nome</option>
-        <option>Andre</option><option>Gio</option><option>Luca</option><option>Matte</option><option>Matti</option><option>Vale M</option><option>Vale V</option><option>Vero</option>
-        <option value="__altro">Altro…</option>
       </select>
-      <input id="nameInput" placeholder="Scrivi il tuo nome" maxlength="40" hidden>
       <button class="primary" type="submit">Entra</button>
     </form>
-    <p class="hint">Puoi cambiare risposta quando vuoi: scegli di nuovo il tuo nome.</p>
+    <p class="hint">Chi ha già votato non compare più nell'elenco.</p>
   </section>
 
-  <section class="panel me" id="mePanel" hidden>
+  <section class="panel" id="votePanel" hidden>
     <div class="me-top">
-      <div><p class="label" style="margin:0">Rispondi come</p><strong id="meName"></strong></div>
+      <div><p class="label">Voti come</p><strong id="meName"></strong></div>
       <button class="ghost" id="logoutBtn" type="button">Cambia nome</button>
     </div>
-    <p class="question">Partecipi al regalo per Ale?</p>
-    <div class="choices">
-      <button class="choice yes" id="yesBtn" type="button" aria-pressed="false">Sì, partecipo</button>
-      <button class="choice no" id="noBtn" type="button" aria-pressed="false">No, passo</button>
+    <h2>Tocca i buoni nell'ordine che preferisci</h2>
+    <p class="hint">Il primo che tocchi è il tuo 1°, poi 2°, 3° e 4°.</p>
+    <div class="options" id="options"></div>
+    <div class="actions">
+      <button class="ghost" id="resetBtn" type="button">Ricomincia</button>
+      <button class="primary" id="sendBtn" type="button" disabled>Invia il voto</button>
     </div>
+    <p class="hint">Dopo l'invio il voto non si può cambiare.</p>
     <p class="status" id="status"></p>
   </section>
 
-  <section class="panel">
-    <div class="tally">
-      <div class="stat yes"><b id="nYes">0</b><span>partecipano</span></div>
-      <div class="stat"><b id="nNo">0</b><span>non partecipano</span></div>
-      <div class="stat"><b id="nWait">0</b><span>devono rispondere</span></div>
+  <section class="panel done" id="thanksPanel" hidden>
+    <h2>Grazie <span id="thanksName"></span>, il tuo voto è registrato.</h2>
+  </section>
+
+  <section class="panel" id="resultsPanel">
+    <div class="me-top">
+      <p class="label">Hanno votato</p>
+      <strong id="count" style="font-size:16px;font-variant-numeric:tabular-nums"></strong>
     </div>
-    <div class="groups">
-      <div class="group"><p>Partecipano</p><div class="chips" id="gYes"></div></div>
-      <div class="group"><p>Non partecipano</p><div class="chips" id="gNo"></div></div>
-      <div class="group"><p>Devono ancora rispondere</p><div class="chips" id="gWait"></div></div>
+    <div class="progress"><i id="bar" style="width:0%"></i></div>
+    <div id="waitBox">
+      <p class="hint" style="margin-bottom:6px">Mancano:</p>
+      <div class="chips" id="missing"></div>
+    </div>
+    <p class="hint" id="hiddenNote">La classifica compare quando hanno votato tutti e 8.</p>
+    <div id="ranking" hidden>
+      <h2 id="winnerLine" style="margin-bottom:12px"></h2>
+      <ol class="rank" id="rankList"></ol>
+      <p class="hint" style="margin-top:12px">Punti: 1° posto = 4, 2° = 3, 3° = 2, 4° = 1.</p>
     </div>
   </section>
   <p class="status" id="connStatus"></p>
@@ -124,77 +139,119 @@ const FIREBASE_CONFIG = {
 };
 (function(){
   const TEAM = ["Andre","Gio","Luca","Matte","Matti","Vale M","Vale V","Vero"];
+  const OPTIONS = [
+    {id:"b175", t:"Buono da 175 €", s:"21,87 € a testa"},
+    {id:"b150", t:"Buono da 150 €", s:"18,75 € a testa"},
+    {id:"b125", t:"Buono da 125 €", s:"15,62 € a testa"},
+    {id:"b100", t:"Buono da 100 €", s:"12,50 € a testa"}
+  ];
+  const FIELD = "votoTicketone";
   const $ = id => document.getElementById(id);
-  let db = null, people = {}, me = null, saving = false;
-
-  const slug = n => n.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60) || "anonimo";
+  const slug = n => n.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
   const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  function store(k,v){ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){} }
-  function load(k){ try{ return localStorage.getItem(k);}catch(e){ return null; } }
+  let db = null, ballots = {}, me = null, order = [], sending = false;
 
-  function render(){
-    const byName = {};
-    TEAM.forEach(n => byName[n] = null);
-    Object.values(people).forEach(p => { if(p.name && (p.regalo || TEAM.includes(p.name))) byName[p.name] = p.regalo || null; });
-    if(me && !(me.name in byName)) byName[me.name] = null;
-    const names = Object.keys(byName).sort((a,b)=>a.localeCompare(b));
-    const yes = names.filter(n => byName[n]==="si"), no = names.filter(n => byName[n]==="no"), wait = names.filter(n => !byName[n]);
-    $("nYes").textContent = yes.length; $("nNo").textContent = no.length; $("nWait").textContent = wait.length;
-    const chips = (list, cls, emptyText) => list.length ? list.map(n => '<span class="chip '+cls+(me&&n===me.name?' me':'')+'">'+esc(n)+'</span>').join("") : '<span class="empty">'+emptyText+'</span>';
-    $("gYes").innerHTML = chips(yes, "yes", "Ancora nessuno");
-    $("gNo").innerHTML = chips(no, "", "Nessuno");
-    $("gWait").innerHTML = chips(wait, "wait", "Hanno risposto tutti");
-    if(me){
-      const mine = byName[me.name];
-      $("yesBtn").setAttribute("aria-pressed", mine==="si");
-      $("noBtn").setAttribute("aria-pressed", mine==="no");
-    }
+  const valid = v => Array.isArray(v) && v.length===OPTIONS.length && OPTIONS.every(o => v.includes(o.id));
+  const voted = () => TEAM.filter(n => ballots[slug(n)]);
+
+  function renderNames(){
+    const sel = $("nameSelect"), cur = sel.value;
+    sel.innerHTML = '<option value="" disabled>Scegli il tuo nome</option>' +
+      TEAM.filter(n => !ballots[slug(n)]).map(n => '<option>'+esc(n)+'</option>').join("");
+    sel.value = TEAM.includes(cur) && !ballots[slug(cur)] ? cur : "";
+    if(!sel.value) sel.selectedIndex = 0;
+    if(!TEAM.some(n => !ballots[slug(n)])) $("namePanel").hidden = true;
   }
 
-  async function answer(val){
-    if(!me) return;
-    if(!db){ $("status").textContent = "Collegamento non disponibile. Ricarica la pagina."; return; }
-    if(saving) return;
-    saving = true;
-    people[me.id] = {name:me.name, regalo:val};
-    render();
-    $("status").textContent = "Salvo…";
-    try{
-      await db.doc("people/"+me.id).set({name:me.name, regalo:val, updatedAt:new Date().toISOString()});
-      $("status").textContent = val==="si" ? "Salvato: partecipi al regalo." : "Salvato: non partecipi.";
-    }catch(e){
-      $("status").textContent = "Non sono riuscito a salvare. Riprova tra un attimo.";
-    }finally{ saving = false; }
+  function renderOptions(){
+    $("options").innerHTML = OPTIONS.map(o => {
+      const i = order.indexOf(o.id);
+      return '<button type="button" class="opt'+(i>=0?' ranked':'')+'" data-id="'+o.id+'" aria-label="'+esc(o.t)+(i>=0?', posizione '+(i+1):'')+'"><span class="pos">'+(i>=0? (i+1)+'°' : '')+'</span><span><span class="t">'+esc(o.t)+'</span><span class="s">'+esc(o.s)+'</span></span></button>';
+    }).join("");
+    $("sendBtn").disabled = order.length !== OPTIONS.length || sending;
   }
+
+  function renderResults(){
+    const v = voted(), n = v.length, tot = TEAM.length;
+    $("count").textContent = n + " su " + tot;
+    $("bar").style.width = (100*n/tot) + "%";
+    const miss = TEAM.filter(x => !ballots[slug(x)]);
+    $("waitBox").hidden = !miss.length;
+    $("missing").innerHTML = miss.map(x => '<span class="chip">'+esc(x)+'</span>').join("");
+    const complete = n === tot;
+    $("hiddenNote").hidden = complete;
+    $("ranking").hidden = !complete;
+    $("resultsPanel").classList.toggle("winner", complete);
+    if(!complete) return;
+    const pts = {}; OPTIONS.forEach(o => pts[o.id] = 0);
+    v.forEach(x => ballots[slug(x)].forEach((id,i) => { pts[id] += OPTIONS.length - i; }));
+    const sorted = OPTIONS.slice().sort((a,b) => pts[b.id]-pts[a.id]);
+    const top = pts[sorted[0].id], max = OPTIONS.length * tot;
+    const winners = sorted.filter(o => pts[o.id]===top);
+    $("winnerLine").textContent = winners.length===1 ? "Vince il " + winners[0].t.replace("Buono","buono") + " (" + winners[0].s + ")" : "Pareggio tra " + winners.map(o=>o.t.replace("Buono da ","")).join(" e ");
+    let rank = 0, prev = null;
+    $("rankList").innerHTML = sorted.map((o,i) => {
+      if(pts[o.id]!==prev){ rank = i+1; prev = pts[o.id]; }
+      return '<li class="'+(pts[o.id]===top?'win':'')+'"><span class="n">'+rank+'°</span><span><span class="name">'+esc(o.t)+' <span class="hint" style="display:inline">· '+esc(o.s)+'</span></span><span class="bar"><i style="width:'+(100*pts[o.id]/max)+'%"></i></span></span><span class="pts">'+pts[o.id]+' pt</span></li>';
+    }).join("");
+  }
+
+  function render(){ renderNames(); renderResults(); if(me) renderOptions(); }
 
   function enter(name){
-    name = name.trim().replace(/\s+/g," ");
-    if(!name) return;
-    const id = slug(name);
-    me = {id, name: people[id] ? people[id].name : name};
-    store("regalo-ale-name", me.name);
-    $("namePanel").hidden = true; $("mePanel").hidden = false; $("meName").textContent = me.name;
-    $("status").textContent = "";
-    render();
+    if(!TEAM.includes(name) || ballots[slug(name)]) return;
+    me = {id:slug(name), name}; order = [];
+    $("namePanel").hidden = true; $("votePanel").hidden = false; $("thanksPanel").hidden = true;
+    $("meName").textContent = name; $("status").textContent = "";
+    renderOptions();
+  }
+  function leave(){
+    me = null; order = [];
+    $("votePanel").hidden = true; $("namePanel").hidden = false;
+    renderNames();
   }
 
-  $("nameSelect").addEventListener("change", () => { const altro = $("nameSelect").value==="__altro"; $("nameInput").hidden = !altro; $("nameInput").required = altro; if(altro) $("nameInput").focus(); });
-  $("nameForm").addEventListener("submit", e => { e.preventDefault(); const v = $("nameSelect").value; enter(v==="__altro" ? $("nameInput").value : v); });
-  $("logoutBtn").addEventListener("click", () => { me=null; store("regalo-ale-name",null); $("namePanel").hidden=false; $("mePanel").hidden=true; $("nameInput").value=""; $("nameInput").hidden=true; $("nameSelect").selectedIndex=0; render(); });
-  $("yesBtn").addEventListener("click", () => answer("si"));
-  $("noBtn").addEventListener("click", () => answer("no"));
+  async function send(){
+    if(!me || order.length!==OPTIONS.length || sending) return;
+    if(!db){ $("status").textContent = "Collegamento non disponibile. Ricarica la pagina."; return; }
+    sending = true; renderOptions(); $("status").textContent = "Invio…";
+    try{
+      const ref = db.doc("people/"+me.id);
+      const snap = await ref.get();
+      if(snap.exists && valid(snap.data()[FIELD])){
+        $("status").textContent = me.name + " ha già votato. Ogni nome può votare una volta sola.";
+        sending = false; return;
+      }
+      await ref.set({name:me.name, [FIELD]:order.slice(), updatedAt:new Date().toISOString()});
+      ballots[me.id] = order.slice();
+      $("thanksName").textContent = me.name;
+      $("votePanel").hidden = true; $("thanksPanel").hidden = false;
+      me = null; order = [];
+      render();
+    }catch(e){
+      $("status").textContent = "Non sono riuscito a inviare il voto. Riprova tra un attimo.";
+    }finally{ sending = false; if(me) renderOptions(); }
+  }
+
+  $("nameForm").addEventListener("submit", e => { e.preventDefault(); enter($("nameSelect").value); });
+  $("logoutBtn").addEventListener("click", leave);
+  $("resetBtn").addEventListener("click", () => { order = []; renderOptions(); });
+  $("sendBtn").addEventListener("click", send);
+  $("options").addEventListener("click", e => {
+    const b = e.target.closest(".opt"); if(!b) return;
+    const id = b.dataset.id, i = order.indexOf(id);
+    if(i>=0) order.splice(i,1); else order.push(id);
+    renderOptions();
+  });
 
   render();
-  const remembered = load("regalo-ale-name");
   try{ firebase.initializeApp(FIREBASE_CONFIG); db = firebase.firestore(); }catch(e){ db = null; }
   if(!db){ $("connStatus").textContent = "Collegamento non disponibile. Ricarica la pagina."; return; }
-  let first = true;
   db.collection("people").onSnapshot(snap => {
     const next = {};
-    snap.docs.forEach(d => { const v = d.data(); if(v && v.name) next[d.id] = {name:v.name, regalo:(v.regalo==="si"||v.regalo==="no")?v.regalo:null}; });
-    if(saving && me && people[me.id]) next[me.id] = people[me.id];
-    people = next;
-    if(first){ first=false; if(remembered && !me) enter(remembered); }
+    snap.docs.forEach(d => { const v = d.data(); if(v && valid(v[FIELD])) next[d.id] = v[FIELD].slice(); });
+    ballots = next;
+    if(me && ballots[me.id] && !sending){ $("status").textContent = me.name + " ha già votato."; leave(); }
     render();
   }, () => { $("connStatus").textContent = "Collegamento perso. Ricarica la pagina."; });
 })();
