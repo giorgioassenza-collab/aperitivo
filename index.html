@@ -66,13 +66,22 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outlin
 .rank li.win .n{color:var(--olive)}
 .rank li.win .bar i{background:var(--olive)}
 .winner{border-color:transparent;background:var(--olive-soft)}
+.who input{flex:1 1 200px;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.who input:focus-visible{outline:2px solid var(--spritz);outline-offset:2px}
+.other{display:flex;flex-direction:column;gap:8px}
+.other-btn{width:100%;border-style:dashed}
+.opt .pos.plus{border-style:solid;font-size:22px;color:var(--spritz);border-color:var(--spritz)}
+.other-form{display:flex;flex-direction:column;gap:8px;padding:12px;border:2px dashed var(--spritz);border-radius:10px}
+.opt .tag{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--spritz)}
+.chip.prop{border-style:solid;color:var(--fg);background:var(--spritz-soft);border-color:transparent}
+.opt{width:100%}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>Regalo per <span>Ale</span></h1>
-    <p class="lede">Metti in ordine i buoni Ticketone dal tuo preferito al meno preferito. Si vota una volta sola e il voto è anonimo: la classifica mostra solo i punti.</p>
+    <p class="lede">Metti in ordine i regali dal tuo preferito al meno preferito. Ogni nome ha un solo voto, che puoi cambiare quando vuoi. Il voto è anonimo: la classifica mostra solo i punti.</p>
   </header>
 
   <section class="panel" id="namePanel">
@@ -83,7 +92,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outlin
       </select>
       <button class="primary" type="submit">Entra</button>
     </form>
-    <p class="hint">Chi ha già votato non compare più nell'elenco.</p>
+    <p class="hint">Se hai già votato, scegli di nuovo il tuo nome per cambiare il voto.</p>
   </section>
 
   <section class="panel" id="votePanel" hidden>
@@ -91,19 +100,30 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outlin
       <div><p class="label">Voti come</p><strong id="meName"></strong></div>
       <button class="ghost" id="logoutBtn" type="button">Cambia nome</button>
     </div>
-    <h2>Tocca i buoni nell'ordine che preferisci</h2>
-    <p class="hint">Il primo che tocchi è il tuo 1°, poi 2°, 3° e 4°.</p>
+    <h2>Tocca i regali nell'ordine che preferisci</h2>
+    <p class="hint">Il primo che tocchi è il tuo 1°, poi il 2° e così via. Tocca di nuovo un regalo per toglierlo dalla tua classifica.</p>
     <div class="options" id="options"></div>
+    <div class="other" id="otherBox">
+      <button type="button" class="opt other-btn" id="otherBtn"><span class="pos plus">+</span><span><span class="t" id="otherTitle">Altro regalo</span><span class="s" id="otherSub">Proponi un regalo diverso: comparirà a tutti</span></span></button>
+      <form class="other-form" id="otherForm" hidden>
+        <label class="label" for="otherInput">Che regalo proponi?</label>
+        <div class="who">
+          <input id="otherInput" maxlength="80" placeholder="Es. cena per due al ristorante X" required>
+          <button class="primary" type="submit">Aggiungi</button>
+        </div>
+        <button class="ghost" type="button" id="otherCancel" style="align-self:flex-start">Annulla</button>
+      </form>
+    </div>
     <div class="actions">
       <button class="ghost" id="resetBtn" type="button">Ricomincia</button>
       <button class="primary" id="sendBtn" type="button" disabled>Invia il voto</button>
     </div>
-    <p class="hint">Dopo l'invio il voto non si può cambiare.</p>
     <p class="status" id="status"></p>
   </section>
 
   <section class="panel done" id="thanksPanel" hidden>
     <h2>Grazie <span id="thanksName"></span>, il tuo voto è registrato.</h2>
+    <p class="hint" style="color:inherit">Se qualcuno propone un altro regalo che ti piace, rientra con il tuo nome e cambia il voto.</p>
   </section>
 
   <section class="panel" id="resultsPanel">
@@ -116,11 +136,15 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outlin
       <p class="hint" style="margin-bottom:6px">Mancano:</p>
       <div class="chips" id="missing"></div>
     </div>
+    <div id="propBox" hidden>
+      <p class="hint" style="margin-bottom:6px">Altri regali proposti:</p>
+      <div class="chips" id="props"></div>
+    </div>
     <p class="hint" id="hiddenNote">La classifica compare quando hanno votato tutti e 8.</p>
     <div id="ranking" hidden>
       <h2 id="winnerLine" style="margin-bottom:12px"></h2>
       <ol class="rank" id="rankList"></ol>
-      <p class="hint" style="margin-top:12px">Punti: 1° posto = 4, 2° = 3, 3° = 2, 4° = 1.</p>
+      <p class="hint" id="ptsNote" style="margin-top:12px"></p>
     </div>
   </section>
   <p class="status" id="connStatus"></p>
@@ -139,70 +163,92 @@ const FIREBASE_CONFIG = {
 };
 (function(){
   const TEAM = ["Andre","Gio","Luca","Matte","Matti","Vale M","Vale V","Vero"];
-  const OPTIONS = [
-    {id:"b175", t:"Buono da 175 €", s:"21,87 € a testa"},
-    {id:"b150", t:"Buono da 150 €", s:"18,75 € a testa"},
-    {id:"b125", t:"Buono da 125 €", s:"15,62 € a testa"},
-    {id:"b100", t:"Buono da 100 €", s:"12,50 € a testa"}
+  const FIXED = [
+    {id:"b175", t:"Buono Ticketone da 175 €", s:"21,87 € a testa"},
+    {id:"b150", t:"Buono Ticketone da 150 €", s:"18,75 € a testa"},
+    {id:"b125", t:"Buono Ticketone da 125 €", s:"15,62 € a testa"},
+    {id:"b100", t:"Buono Ticketone da 100 €", s:"12,50 € a testa"}
   ];
   const FIELD = "votoTicketone";
   const $ = id => document.getElementById(id);
   const slug = n => n.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
   const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  let db = null, ballots = {}, me = null, order = [], sending = false;
+  let db = null, docs = {}, me = null, order = [], busy = false;
 
-  const valid = v => Array.isArray(v) && v.length===OPTIONS.length && OPTIONS.every(o => v.includes(o.id));
-  const voted = () => TEAM.filter(n => ballots[slug(n)]);
+  // all current options: fixed vouchers + one proposal per person
+  function options(){
+    const props = Object.values(docs).filter(d => d.prop).map(d => ({id:d.prop.id, t:d.prop.text, s:"Proposto da un collega", custom:true, at:d.prop.at||""}));
+    props.sort((a,b) => a.at.localeCompare(b.at));
+    return FIXED.concat(props);
+  }
+  const optIds = () => options().map(o => o.id);
+  const ballotOf = id => { const d = docs[id]; if(!d || !Array.isArray(d.vote)) return null; const ids = optIds(); const b = d.vote.filter(x => ids.includes(x)); return b.length ? b : null; };
+  const hasVoted = name => !!ballotOf(slug(name));
 
   function renderNames(){
     const sel = $("nameSelect"), cur = sel.value;
     sel.innerHTML = '<option value="" disabled>Scegli il tuo nome</option>' +
-      TEAM.filter(n => !ballots[slug(n)]).map(n => '<option>'+esc(n)+'</option>').join("");
-    sel.value = TEAM.includes(cur) && !ballots[slug(cur)] ? cur : "";
+      TEAM.map(n => '<option value="'+esc(n)+'">'+esc(n)+(hasVoted(n)?' · ha votato':'')+'</option>').join("");
+    sel.value = TEAM.includes(cur) ? cur : "";
     if(!sel.value) sel.selectedIndex = 0;
-    if(!TEAM.some(n => !ballots[slug(n)])) $("namePanel").hidden = true;
   }
 
   function renderOptions(){
-    $("options").innerHTML = OPTIONS.map(o => {
+    const opts = options(), ids = opts.map(o=>o.id);
+    order = order.filter(x => ids.includes(x));
+    $("options").innerHTML = opts.map(o => {
       const i = order.indexOf(o.id);
-      return '<button type="button" class="opt'+(i>=0?' ranked':'')+'" data-id="'+o.id+'" aria-label="'+esc(o.t)+(i>=0?', posizione '+(i+1):'')+'"><span class="pos">'+(i>=0? (i+1)+'°' : '')+'</span><span><span class="t">'+esc(o.t)+'</span><span class="s">'+esc(o.s)+'</span></span></button>';
+      return '<button type="button" class="opt'+(i>=0?' ranked':'')+'" data-id="'+esc(o.id)+'" aria-label="'+esc(o.t)+(i>=0?', posizione '+(i+1):'')+'"><span class="pos">'+(i>=0? (i+1)+'°' : '')+'</span><span><span class="t">'+esc(o.t)+(o.custom?'<span class="tag">Proposta</span>':'')+'</span><span class="s">'+esc(o.s)+'</span></span></button>';
     }).join("");
-    $("sendBtn").disabled = order.length !== OPTIONS.length || sending;
+    const left = opts.length - order.length;
+    const btn = $("sendBtn");
+    btn.disabled = left>0 || busy;
+    btn.textContent = left>0 ? "Mancano "+left+" da mettere in ordine" : (hasVoted(me.name) ? "Aggiorna il voto" : "Invia il voto");
+    const mine = docs[me.id] && docs[me.id].prop;
+    $("otherTitle").textContent = mine ? "Cambia la tua proposta" : "Altro regalo";
+    $("otherSub").textContent = mine ? "Ora proponi: " + mine.text : "Proponi un regalo diverso: comparirà a tutti";
   }
 
   function renderResults(){
-    const v = voted(), n = v.length, tot = TEAM.length;
+    const opts = options(), N = opts.length, tot = TEAM.length;
+    const voters = TEAM.filter(hasVoted), n = voters.length;
     $("count").textContent = n + " su " + tot;
     $("bar").style.width = (100*n/tot) + "%";
-    const miss = TEAM.filter(x => !ballots[slug(x)]);
+    const miss = TEAM.filter(x => !hasVoted(x));
     $("waitBox").hidden = !miss.length;
     $("missing").innerHTML = miss.map(x => '<span class="chip">'+esc(x)+'</span>').join("");
+    const props = opts.filter(o => o.custom);
+    $("propBox").hidden = !props.length;
+    $("props").innerHTML = props.map(o => '<span class="chip prop">'+esc(o.t)+'</span>').join("");
     const complete = n === tot;
     $("hiddenNote").hidden = complete;
     $("ranking").hidden = !complete;
     $("resultsPanel").classList.toggle("winner", complete);
     if(!complete) return;
-    const pts = {}; OPTIONS.forEach(o => pts[o.id] = 0);
-    v.forEach(x => ballots[slug(x)].forEach((id,i) => { pts[id] += OPTIONS.length - i; }));
-    const sorted = OPTIONS.slice().sort((a,b) => pts[b.id]-pts[a.id]);
-    const top = pts[sorted[0].id], max = OPTIONS.length * tot;
+    const pts = {}; opts.forEach(o => pts[o.id] = 0);
+    voters.forEach(x => ballotOf(slug(x)).forEach((id,i) => { pts[id] += N - i; }));
+    const sorted = opts.slice().sort((a,b) => pts[b.id]-pts[a.id]);
+    const top = pts[sorted[0].id], max = N * tot || 1;
     const winners = sorted.filter(o => pts[o.id]===top);
-    $("winnerLine").textContent = winners.length===1 ? "Vince il " + winners[0].t.replace("Buono","buono") + " (" + winners[0].s + ")" : "Pareggio tra " + winners.map(o=>o.t.replace("Buono da ","")).join(" e ");
+    $("winnerLine").textContent = winners.length===1 ? "Vince: " + winners[0].t : "Pareggio tra: " + winners.map(o=>o.t).join(" e ");
     let rank = 0, prev = null;
     $("rankList").innerHTML = sorted.map((o,i) => {
       if(pts[o.id]!==prev){ rank = i+1; prev = pts[o.id]; }
-      return '<li class="'+(pts[o.id]===top?'win':'')+'"><span class="n">'+rank+'°</span><span><span class="name">'+esc(o.t)+' <span class="hint" style="display:inline">· '+esc(o.s)+'</span></span><span class="bar"><i style="width:'+(100*pts[o.id]/max)+'%"></i></span></span><span class="pts">'+pts[o.id]+' pt</span></li>';
+      return '<li class="'+(pts[o.id]===top?'win':'')+'"><span class="n">'+rank+'°</span><span style="min-width:0"><span class="name">'+esc(o.t)+(o.custom?'':' <span class="hint" style="display:inline">· '+esc(o.s)+'</span>')+'</span><span class="bar"><i style="width:'+(100*pts[o.id]/max)+'%"></i></span></span><span class="pts">'+pts[o.id]+' pt</span></li>';
     }).join("");
+    $("ptsNote").textContent = "Punti: il 1° posto vale "+N+", il 2° "+(N-1)+" e così via fino a 1 per l'ultimo. Un regalo proposto dopo il voto di qualcuno prende 0 punti da quella persona, finché non aggiorna il voto.";
   }
 
   function render(){ renderNames(); renderResults(); if(me) renderOptions(); }
 
   function enter(name){
-    if(!TEAM.includes(name) || ballots[slug(name)]) return;
-    me = {id:slug(name), name}; order = [];
+    if(!TEAM.includes(name)) return;
+    me = {id:slug(name), name};
+    order = (ballotOf(me.id) || []).slice();
     $("namePanel").hidden = true; $("votePanel").hidden = false; $("thanksPanel").hidden = true;
-    $("meName").textContent = name; $("status").textContent = "";
+    $("otherForm").hidden = true; $("otherBtn").hidden = false;
+    $("meName").textContent = name;
+    $("status").textContent = order.length ? "Questo è il tuo voto attuale. Puoi cambiarlo e premere Aggiorna." : "";
     renderOptions();
   }
   function leave(){
@@ -211,31 +257,54 @@ const FIREBASE_CONFIG = {
     renderNames();
   }
 
+  async function save(data){
+    await db.doc("people/"+me.id).set(Object.assign({name:me.name, updatedAt:new Date().toISOString()}, data), {merge:true});
+  }
+
   async function send(){
-    if(!me || order.length!==OPTIONS.length || sending) return;
+    if(!me || busy) return;
+    if(order.length !== options().length) return;
     if(!db){ $("status").textContent = "Collegamento non disponibile. Ricarica la pagina."; return; }
-    sending = true; renderOptions(); $("status").textContent = "Invio…";
+    busy = true; renderOptions(); $("status").textContent = "Invio…";
     try{
-      const ref = db.doc("people/"+me.id);
-      const snap = await ref.get();
-      if(snap.exists && valid(snap.data()[FIELD])){
-        $("status").textContent = me.name + " ha già votato. Ogni nome può votare una volta sola.";
-        sending = false; return;
-      }
-      await ref.set({name:me.name, [FIELD]:order.slice(), updatedAt:new Date().toISOString()});
-      ballots[me.id] = order.slice();
+      await save({[FIELD]: order.slice()});
+      docs[me.id] = Object.assign({}, docs[me.id], {vote: order.slice()});
       $("thanksName").textContent = me.name;
-      $("votePanel").hidden = true; $("thanksPanel").hidden = false;
+      $("votePanel").hidden = true; $("thanksPanel").hidden = false; $("namePanel").hidden = false;
       me = null; order = [];
-      render();
+      $("nameSelect").value = "";
+      busy = false; render();
     }catch(e){
+      busy = false;
       $("status").textContent = "Non sono riuscito a inviare il voto. Riprova tra un attimo.";
-    }finally{ sending = false; if(me) renderOptions(); }
+      renderOptions();
+    }
+  }
+
+  async function propose(text){
+    text = text.trim().replace(/\s+/g," ");
+    if(!text || !me || busy) return;
+    if(!db){ $("status").textContent = "Collegamento non disponibile. Ricarica la pagina."; return; }
+    const lower = text.toLowerCase();
+    if(options().some(o => o.t.toLowerCase()===lower && !(docs[me.id] && docs[me.id].prop && docs[me.id].prop.id===o.id))){ $("status").textContent = "Questo regalo c'è già nella lista."; return; }
+    busy = true; $("status").textContent = "Aggiungo la proposta…";
+    const prop = {id:"p-"+me.id+"-"+Date.now().toString(36), text, at:new Date().toISOString()};
+    const old = docs[me.id] && docs[me.id].prop;
+    try{
+      await save({proposta: prop});
+      docs[me.id] = Object.assign({}, docs[me.id], {prop});
+      if(old) order = order.map(x => x===old.id ? prop.id : x);
+      if(!order.includes(prop.id)) order.push(prop.id);
+      $("otherForm").hidden = true; $("otherBtn").hidden = false; $("otherInput").value = "";
+      $("status").textContent = "Proposta aggiunta: ora la vedono tutti. Mettila in ordine e invia il voto.";
+    }catch(e){
+      $("status").textContent = "Non sono riuscito ad aggiungere la proposta. Riprova tra un attimo.";
+    }finally{ busy = false; render(); }
   }
 
   $("nameForm").addEventListener("submit", e => { e.preventDefault(); enter($("nameSelect").value); });
   $("logoutBtn").addEventListener("click", leave);
-  $("resetBtn").addEventListener("click", () => { order = []; renderOptions(); });
+  $("resetBtn").addEventListener("click", () => { order = []; $("status").textContent = ""; renderOptions(); });
   $("sendBtn").addEventListener("click", send);
   $("options").addEventListener("click", e => {
     const b = e.target.closest(".opt"); if(!b) return;
@@ -243,15 +312,27 @@ const FIREBASE_CONFIG = {
     if(i>=0) order.splice(i,1); else order.push(id);
     renderOptions();
   });
+  $("otherBtn").addEventListener("click", () => {
+    $("otherBtn").hidden = true; $("otherForm").hidden = false;
+    const mine = docs[me.id] && docs[me.id].prop; $("otherInput").value = mine ? mine.text : "";
+    $("otherInput").focus();
+  });
+  $("otherCancel").addEventListener("click", () => { $("otherForm").hidden = true; $("otherBtn").hidden = false; });
+  $("otherForm").addEventListener("submit", e => { e.preventDefault(); propose($("otherInput").value); });
 
   render();
   try{ firebase.initializeApp(FIREBASE_CONFIG); db = firebase.firestore(); }catch(e){ db = null; }
   if(!db){ $("connStatus").textContent = "Collegamento non disponibile. Ricarica la pagina."; return; }
   db.collection("people").onSnapshot(snap => {
     const next = {};
-    snap.docs.forEach(d => { const v = d.data(); if(v && valid(v[FIELD])) next[d.id] = v[FIELD].slice(); });
-    ballots = next;
-    if(me && ballots[me.id] && !sending){ $("status").textContent = me.name + " ha già votato."; leave(); }
+    snap.docs.forEach(d => {
+      const v = d.data(); if(!v) return;
+      const e = {};
+      if(Array.isArray(v[FIELD]) && v[FIELD].every(x => typeof x==="string")) e.vote = v[FIELD].slice();
+      if(v.proposta && typeof v.proposta.text==="string" && typeof v.proposta.id==="string" && v.proposta.text.trim()) e.prop = {id:v.proposta.id, text:v.proposta.text.slice(0,80), at:String(v.proposta.at||"")};
+      if(e.vote || e.prop) next[d.id] = e;
+    });
+    docs = next;
     render();
   }, () => { $("connStatus").textContent = "Collegamento perso. Ricarica la pagina."; });
 })();
