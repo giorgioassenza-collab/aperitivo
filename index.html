@@ -132,10 +132,6 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outlin
       <strong id="count" style="font-size:16px;font-variant-numeric:tabular-nums"></strong>
     </div>
     <div class="progress"><i id="bar" style="width:0%"></i></div>
-    <div id="waitBox">
-      <p class="hint" style="margin-bottom:6px">Mancano:</p>
-      <div class="chips" id="missing"></div>
-    </div>
     <div id="propBox" hidden>
       <p class="hint" style="margin-bottom:6px">Altri regali proposti:</p>
       <div class="chips" id="props"></div>
@@ -188,7 +184,7 @@ const FIREBASE_CONFIG = {
   function renderNames(){
     const sel = $("nameSelect"), cur = sel.value;
     sel.innerHTML = '<option value="" disabled>Scegli il tuo nome</option>' +
-      TEAM.map(n => '<option value="'+esc(n)+'">'+esc(n)+(hasVoted(n)?' · ha votato':'')+'</option>').join("");
+      TEAM.map(n => '<option value="'+esc(n)+'">'+esc(n)+'</option>').join("");
     sel.value = TEAM.includes(cur) ? cur : "";
     if(!sel.value) sel.selectedIndex = 0;
   }
@@ -214,9 +210,6 @@ const FIREBASE_CONFIG = {
     const voters = TEAM.filter(hasVoted), n = voters.length;
     $("count").textContent = n + " su " + tot;
     $("bar").style.width = (100*n/tot) + "%";
-    const miss = TEAM.filter(x => !hasVoted(x));
-    $("waitBox").hidden = !miss.length;
-    $("missing").innerHTML = miss.map(x => '<span class="chip">'+esc(x)+'</span>').join("");
     const props = opts.filter(o => o.custom);
     $("propBox").hidden = !props.length;
     $("props").innerHTML = props.map(o => '<span class="chip prop">'+esc(o.t)+'</span>').join("");
