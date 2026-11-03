@@ -132,12 +132,17 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--spritz);outlin
       <strong id="count" style="font-size:16px;font-variant-numeric:tabular-nums"></strong>
     </div>
     <div class="progress"><i id="bar" style="width:0%"></i></div>
+    <div id="waitBox" hidden>
+      <p class="hint" style="margin-bottom:6px">Deve ancora votare:</p>
+      <div class="chips" id="missing"></div>
+    </div>
     <div id="propBox" hidden>
       <p class="hint" style="margin-bottom:6px">Altri regali proposti:</p>
       <div class="chips" id="props"></div>
     </div>
-    <p class="hint" id="hiddenNote">La classifica compare quando hanno votato tutti e 8.</p>
+    <p class="hint" id="hiddenNote">Ancora nessun voto: la classifica compare dal primo voto.</p>
     <div id="ranking" hidden>
+      <p class="label" id="rankLabel" style="margin-bottom:4px"></p>
       <h2 id="winnerLine" style="margin-bottom:12px"></h2>
       <ol class="rank" id="rankList"></ol>
       <p class="hint" id="ptsNote" style="margin-top:12px"></p>
@@ -213,17 +218,23 @@ const FIREBASE_CONFIG = {
     const props = opts.filter(o => o.custom);
     $("propBox").hidden = !props.length;
     $("props").innerHTML = props.map(o => '<span class="chip prop">'+esc(o.t)+'</span>').join("");
+    const miss = TEAM.filter(x => !hasVoted(x));
+    $("waitBox").hidden = !miss.length;
+    $("waitBox").querySelector("p").textContent = miss.length===1 ? "Deve ancora votare:" : "Devono ancora votare:";
+    $("missing").innerHTML = miss.map(x => '<span class="chip">'+esc(x)+'</span>').join("");
     const complete = n === tot;
-    $("hiddenNote").hidden = complete;
-    $("ranking").hidden = !complete;
+    $("hiddenNote").hidden = n > 0;
+    $("ranking").hidden = n === 0;
     $("resultsPanel").classList.toggle("winner", complete);
-    if(!complete) return;
+    if(n === 0) return;
+    $("rankLabel").textContent = complete ? "Classifica finale" : "Classifica provvisoria";
     const pts = {}; opts.forEach(o => pts[o.id] = 0);
     voters.forEach(x => ballotOf(slug(x)).forEach((id,i) => { pts[id] += N - i; }));
     const sorted = opts.slice().sort((a,b) => pts[b.id]-pts[a.id]);
     const top = pts[sorted[0].id], max = N * tot || 1;
     const winners = sorted.filter(o => pts[o.id]===top);
-    $("winnerLine").textContent = winners.length===1 ? "Vince: " + winners[0].t : "Pareggio tra: " + winners.map(o=>o.t).join(" e ");
+    const lead = complete ? (winners.length===1 ? "Vince: " : "Pareggio tra: ") : (winners.length===1 ? "In testa: " : "Pari in testa: ");
+    $("winnerLine").textContent = lead + winners.map(o=>o.t).join(" e ");
     let rank = 0, prev = null;
     $("rankList").innerHTML = sorted.map((o,i) => {
       if(pts[o.id]!==prev){ rank = i+1; prev = pts[o.id]; }
